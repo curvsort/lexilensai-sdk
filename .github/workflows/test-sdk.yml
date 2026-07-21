@@ -1,0 +1,79 @@
+name: SDK Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package + test deps
+        run: |
+          pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: |
+          ruff check src/ tests/
+
+      - name: Type check with mypy
+        run: |
+          mypy src/lexilensai/ --ignore-missing-imports
+        continue-on-error: true  # Don't fail on type errors in v0.1.0
+
+      - name: Test with pytest
+        run: |
+          pytest tests/ -v --tb=short
+
+      - name: Test with coverage
+        run: |
+          pytest tests/ --cov=lexilensai --cov-report=term-missing --cov-report=xml --cov-fail-under=85
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: matrix.python-version == '3.12'
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  publish:
+    name: Publish to PyPI
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      id-token: write  # Required for trusted publishing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: |
+          pip install build
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
