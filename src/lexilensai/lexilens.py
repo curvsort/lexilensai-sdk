@@ -9,7 +9,7 @@ from typing import Any
 
 from .config import Config
 from .exporters import ConsoleExporter, JSONLExporter, OTelExporter
-from .frameworks import patch_strands, unpatch_strands
+from .frameworks import patch_anthropic, patch_strands, unpatch_anthropic, unpatch_strands
 from .span import Span, generate_span_id
 
 
@@ -114,8 +114,9 @@ class LexiLens:
         )
         exp.export(start_span)
 
-        # Patch Strands framework
+        # Patch frameworks
         patch_strands(session_id, exp)
+        patch_anthropic(session_id, exp)
 
         return instance
 
@@ -138,6 +139,7 @@ class LexiLens:
 
         # Unpatch frameworks
         unpatch_strands()
+        unpatch_anthropic()
 
         # Close exporter
         self.exporter.close()

@@ -5,6 +5,30 @@ All notable changes to lexilensai-sdk will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-22
+
+### Added
+- Anthropic SDK instrumentation via monkey-patching `anthropic.Anthropic.messages.create()` and `.stream()`
+- Automatic token usage tracking: `input_tokens`, `output_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`
+- Extended thinking token counting for prompts with `thinking` content blocks
+- Latency measurement for all model calls
+- Model name and streaming status tracking in `model.call` spans
+- Auto-detection: patches Anthropic SDK only if installed (graceful skip if not present)
+- Comprehensive test coverage: 14 new tests for Anthropic instrumentation
+
+### Framework Support
+- Strands agents (v0.1.0)
+- **NEW:** Anthropic SDK direct usage (no Strands required)
+
+### Changed
+- `LexiLens.init()` now patches both Strands and Anthropic SDK automatically
+- `LexiLens.close()` unpatches both frameworks
+
+### Known Limitations
+- Streaming calls emit spans but do not yet aggregate token usage across stream chunks
+- No LangChain support yet (planned for v0.3.0)
+- No platform HTTP exporter yet (planned for v0.2.1)
+
 ## [0.1.0] - 2026-07-21
 
 ### Added
