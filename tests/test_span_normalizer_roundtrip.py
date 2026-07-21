@@ -1,3 +1,7 @@
+import pytest
+
+from lexilensai.span import Span
+
 """
 Roundtrip tests with platform span_normalizer.
 
@@ -5,11 +9,8 @@ These tests verify that spans emitted by the SDK can be successfully
 processed by the platform's ingestion/span_normalizer.py without errors.
 """
 
-# Import platform's span_normalizer
-import pytest
+# Import platform's span_normalizer (skips entire module if not available)
 normalize_span = pytest.importorskip("ingestion.span_normalizer").normalize_span
-
-from lexilensai.span import Span
 
 
 def test_session_start_span_roundtrip():
