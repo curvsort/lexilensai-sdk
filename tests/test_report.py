@@ -16,7 +16,6 @@ from lexilensai.report import (
     run_report,
 )
 
-
 # --- Fixtures ---
 
 

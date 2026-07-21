@@ -17,7 +17,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
 # Pricing per 1M tokens (Claude Sonnet 4 as default)
 # https://docs.anthropic.com/en/docs/about-claude/models
 MODEL_PRICING: dict[str, dict[str, float]] = {
