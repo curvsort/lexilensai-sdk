@@ -61,6 +61,17 @@ class MockExporter:
         pass
 
 
+@pytest.fixture(autouse=True)
+def reset_anthropic_globals():
+    """Reset module-level globals between tests to avoid state leakage."""
+    import lexilensai.frameworks.anthropic as anthropic_mod
+    anthropic_mod._original_messages_create = None
+    anthropic_mod._original_messages_stream = None
+    yield
+    anthropic_mod._original_messages_create = None
+    anthropic_mod._original_messages_stream = None
+
+
 @pytest.fixture
 def mock_anthropic_module(monkeypatch):
     """
@@ -125,7 +136,7 @@ def test_patch_anthropic_basic_call(mock_anthropic_module):
     assert span.attributes["output_tokens"] == 50
 
 
-def test_patch_anthropic_with_cache_tokens(mock_anthropic_module):
+def test_patch_anthropic_with_cache_tokens(mock_anthropic_module, monkeypatch):
     """Test that patch_anthropic captures cache token counts."""
     from lexilensai.frameworks.anthropic import patch_anthropic
 
@@ -133,20 +144,22 @@ def test_patch_anthropic_with_cache_tokens(mock_anthropic_module):
     exporter = MockExporter()
     session_id = "test_session"
 
-    # Mock response with cache tokens
-    mock_Messages.create = Mock(
-        return_value=MockResponse(
-            usage=MockUsage(
-                input_tokens=100,
-                output_tokens=50,
-                cache_creation_input_tokens=200,
-                cache_read_input_tokens=150
-            )
+    # Set the mock response with cache tokens BEFORE patching
+    # (patch_anthropic saves the original .create reference)
+    cache_response = MockResponse(
+        usage=MockUsage(
+            input_tokens=100,
+            output_tokens=50,
+            cache_creation_input_tokens=200,
+            cache_read_input_tokens=150
         )
     )
+    mock_Messages.create = Mock(return_value=cache_response)
 
-    # Patch and call
+    # Patch (saves mock_Messages.create as the "original")
     patch_anthropic(session_id, exporter)
+
+    # Call the patched version
     client = Mock()
     mock_Messages.create(client, model="claude-sonnet-4-20250514")
 
@@ -164,20 +177,21 @@ def test_patch_anthropic_with_thinking_tokens(mock_anthropic_module):
     exporter = MockExporter()
     session_id = "test_session"
 
-    # Mock response with thinking block
-    thinking_text = "Let me think about this problem step by step..." * 10  # ~400 chars
-    mock_Messages.create = Mock(
-        return_value=MockResponse(
-            usage=MockUsage(input_tokens=100, output_tokens=150),
-            content=[
-                MockContentBlock(type="thinking", thinking=thinking_text),
-                MockContentBlock(type="text", text="Here's my answer")
-            ]
-        )
+    # Mock response with thinking block — set BEFORE patching
+    thinking_text = "Let me think about this problem step by step..." * 10  # ~480 chars
+    thinking_response = MockResponse(
+        usage=MockUsage(input_tokens=100, output_tokens=150),
+        content=[
+            MockContentBlock(type="thinking", thinking=thinking_text),
+            MockContentBlock(type="text", text="Here's my answer")
+        ]
     )
+    mock_Messages.create = Mock(return_value=thinking_response)
 
-    # Patch and call
+    # Patch (saves mock_Messages.create as the "original")
     patch_anthropic(session_id, exporter)
+
+    # Call the patched version
     client = Mock()
     mock_Messages.create(client, model="claude-sonnet-4-20250514")
 
@@ -186,7 +200,7 @@ def test_patch_anthropic_with_thinking_tokens(mock_anthropic_module):
     assert "thinking_tokens" in span.attributes
     assert span.attributes["thinking_tokens"] > 0
     # Should be approximately len(thinking_text) / 4
-    assert span.attributes["thinking_tokens"] > 90  # ~400/4 = 100
+    assert span.attributes["thinking_tokens"] > 90  # ~480/4 = 120
 
 
 def test_patch_anthropic_streaming_call(mock_anthropic_module):
@@ -225,10 +239,10 @@ def test_patch_anthropic_error_handling(mock_anthropic_module):
     exporter = MockExporter()
     session_id = "test_session"
 
-    # Mock create to raise error
+    # Set error-raising mock BEFORE patching
     mock_Messages.create = Mock(side_effect=Exception("API error"))
 
-    # Patch
+    # Patch (saves the error-raising mock as the "original")
     patch_anthropic(session_id, exporter)
 
     # Call should raise but span should be emitted
@@ -251,34 +265,41 @@ def test_patch_anthropic_unpatch(mock_anthropic_module):
     exporter = MockExporter()
     session_id = "test_session"
 
-    # Save original
+    # Save reference to original create before patch
     original_create = mock_Messages.create
 
-    # Patch
+    # Patch — saves original_create internally, replaces with instrumented version
     patch_anthropic(session_id, exporter)
-    patched_create = mock_Messages.create
 
-    # Verify it changed
-    assert patched_create != original_create
+    # Verify it changed (patched version is a different function)
+    assert mock_Messages.create is not original_create
 
-    # Unpatch
+    # Unpatch — should restore the saved original
     unpatch_anthropic()
 
-    # Verify restored
-    assert mock_Messages.create == original_create
+    # Verify restored to the same function object
+    assert mock_Messages.create is original_create
 
 
 def test_patch_anthropic_not_installed(monkeypatch):
     """Test that patch_anthropic gracefully skips if anthropic not installed."""
+    import builtins
+    import sys
+
     from lexilensai.frameworks.anthropic import patch_anthropic
 
+    # Remove anthropic from sys.modules if present
+    monkeypatch.delitem(sys.modules, "anthropic", raising=False)
+
     # Make anthropic import fail
+    original_import = builtins.__import__
+
     def mock_import(name, *args, **kwargs):
         if name == "anthropic":
             raise ImportError("No module named 'anthropic'")
-        return __import__(name, *args, **kwargs)
+        return original_import(name, *args, **kwargs)
 
-    monkeypatch.setattr(__builtins__, "__import__", mock_import)
+    monkeypatch.setattr(builtins, "__import__", mock_import)
 
     exporter = MockExporter()
     session_id = "test_session"
