@@ -2,10 +2,7 @@
 Tests for lexilensai.report — Token Usage Report CLI.
 """
 import json
-import tempfile
 from pathlib import Path
-
-import pytest
 
 from lexilensai.report import (
     ModelCall,

@@ -21,11 +21,19 @@ from typing import Any
 # Pricing per 1M tokens (Claude Sonnet 4 as default)
 # https://docs.anthropic.com/en/docs/about-claude/models
 MODEL_PRICING: dict[str, dict[str, float]] = {
-    "claude-sonnet-4-20250514": {"input": 3.00, "output": 15.00, "cache_write": 3.75, "cache_read": 0.30},
-    "claude-opus-4-20250514": {"input": 15.00, "output": 75.00, "cache_write": 18.75, "cache_read": 1.50},
-    "claude-haiku-3-5-20241022": {"input": 0.80, "output": 4.00, "cache_write": 1.00, "cache_read": 0.08},
+    "claude-sonnet-4-20250514": {
+        "input": 3.00, "output": 15.00, "cache_write": 3.75, "cache_read": 0.30,
+    },
+    "claude-opus-4-20250514": {
+        "input": 15.00, "output": 75.00, "cache_write": 18.75, "cache_read": 1.50,
+    },
+    "claude-haiku-3-5-20241022": {
+        "input": 0.80, "output": 4.00, "cache_write": 1.00, "cache_read": 0.08,
+    },
     # Fallback
-    "default": {"input": 3.00, "output": 15.00, "cache_write": 3.75, "cache_read": 0.30},
+    "default": {
+        "input": 3.00, "output": 15.00, "cache_write": 3.75, "cache_read": 0.30,
+    },
 }
 
 
@@ -444,7 +452,10 @@ def run_report(
     path = Path(file_path)
 
     if not path.exists():
-        return f"Error: File not found: {file_path}\n\nHint: Run your agent with LexiLens.init(exporter='jsonl') to generate spans."
+        return (
+            f"Error: File not found: {file_path}\n\n"
+            "Hint: Run your agent with LexiLens.init(exporter='jsonl') to generate spans."
+        )
 
     if path.stat().st_size == 0:
         return "Error: Spans file is empty. No model calls recorded yet."
