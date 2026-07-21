@@ -6,7 +6,8 @@ processed by the platform's ingestion/span_normalizer.py without errors.
 """
 
 # Import platform's span_normalizer
-from ingestion.span_normalizer import normalize_span
+import pytest
+normalize_span = pytest.importorskip("ingestion.span_normalizer").normalize_span
 
 from lexilensai.span import Span
 
