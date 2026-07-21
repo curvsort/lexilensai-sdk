@@ -5,6 +5,31 @@ All notable changes to lexilensai-sdk will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-07-22
+
+### Added
+- **Token Usage Report CLI** — `lexilens report` or `python -m lexilensai`
+  - Per-call token breakdown: input, output, cache create/read, thinking tokens
+  - Cache efficiency tracking (hit/miss detection per call)
+  - Thinking overhead analysis
+  - Cost estimation using current Claude model pricing
+  - Anomaly detection: cache misses after hits, token spikes, high thinking overhead, errors
+  - JSON output mode (`--json`) for programmatic consumption
+  - Session filtering (`-s SESSION_ID`)
+  - Multi-session support from a single spans file
+- `lexilens` CLI entry point (installed with `pip install lexilensai-sdk`)
+- `python -m lexilensai` module execution support
+- 30+ new tests for report module
+
+### Usage
+```bash
+# After running your agent with LexiLens.init(exporter="jsonl")
+lexilens report                          # human-readable
+lexilens report --json                   # JSON output
+lexilens report -f my_spans.jsonl        # specific file
+lexilens report -s sess_1784662444       # single session
+```
+
 ## [0.2.0] - 2026-07-22
 
 ### Added
