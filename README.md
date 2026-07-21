@@ -192,9 +192,33 @@ The SDK is a **thin instrumentation layer** — it emits spans in OpenTelemetry 
 
 See [`examples/`](examples/) directory:
 
-- `quickstart.py` — Minimal Strands example
-- `multi_agent.py` — Orchestrator with delegation
-- `jsonl_export.py` — Local file export for testing
+### Scripts
+
+- **[`quickstart_console.py`](examples/quickstart_console.py)** — Test SDK installation without any agent framework. Prints spans to console.
+- **[`quickstart.py`](examples/quickstart.py)** — Minimal Strands agent example with console exporter.
+- **[`jsonl_export.py`](examples/jsonl_export.py)** — JSONL exporter for offline span analysis.
+
+### Notebooks
+
+- **[`production_demo.ipynb`](examples/production_demo.ipynb)** — **Production example** demonstrating the published SDK instrumenting a multi-agent travel planning workflow. Shows:
+  - One-line initialization with JSONL exporter
+  - Automatic instrumentation of Strands agents (orchestrator + specialists)
+  - Session summary with delegation graph
+  - How to switch to OTel exporter for production
+
+**Quick start:**
+```bash
+# Test SDK installation (no dependencies)
+python examples/quickstart_console.py
+
+# Run with Strands agents
+pip install strands-agents
+python examples/quickstart.py
+
+# Interactive notebook demo
+pip install jupyter strands-agents boto3
+jupyter notebook examples/production_demo.ipynb
+```
 
 ## Roadmap
 
