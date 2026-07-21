@@ -1,6 +1,8 @@
 """Tests for configuration management."""
 import os
+
 import pytest
+
 from lexilensai.config import Config
 
 

@@ -4,13 +4,11 @@ Roundtrip tests with platform span_normalizer.
 These tests verify that spans emitted by the SDK can be successfully
 processed by the platform's ingestion/span_normalizer.py without errors.
 """
-import pytest
-from datetime import datetime, timezone
-
-from lexilensai.span import Span, generate_span_id
 
 # Import platform's span_normalizer
 from ingestion.span_normalizer import normalize_span
+
+from lexilensai.span import Span
 
 
 def test_session_start_span_roundtrip():

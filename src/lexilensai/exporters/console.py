@@ -4,6 +4,7 @@ Console exporter for debugging.
 Prints spans to stdout in human-readable format.
 """
 import json
+
 from ..span import Span
 
 

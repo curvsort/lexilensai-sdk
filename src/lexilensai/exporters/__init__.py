@@ -1,6 +1,6 @@
 """Exporters for LexiLensAI spans."""
-from .otel import OTelExporter
-from .jsonl import JSONLExporter
 from .console import ConsoleExporter
+from .jsonl import JSONLExporter
+from .otel import OTelExporter
 
 __all__ = ["OTelExporter", "JSONLExporter", "ConsoleExporter"]

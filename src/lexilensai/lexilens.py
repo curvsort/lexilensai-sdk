@@ -8,9 +8,9 @@ import time
 from typing import Any
 
 from .config import Config
-from .span import Span, generate_span_id
-from .exporters import OTelExporter, JSONLExporter, ConsoleExporter
+from .exporters import ConsoleExporter, JSONLExporter, OTelExporter
 from .frameworks import patch_strands, unpatch_strands
+from .span import Span, generate_span_id
 
 
 class LexiLens:

@@ -50,3 +50,9 @@ lexilens_spans.jsonl
 # Distribution / packaging
 *.egg
 MANIFEST
+
+GAPS_RESOLVED.md
+NEXT_STEPS.md
+VERIFICATION_REPORT.md
+
+

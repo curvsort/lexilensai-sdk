@@ -4,12 +4,10 @@ Strands framework instrumentation.
 Monkey-patches strands.Agent.__call__ to emit session-aware spans.
 Tracks parent-child relationships via call stack.
 """
-import functools
-from typing import Any, Callable
 import threading
+from typing import Any, Callable
 
 from ..span import Span, generate_span_id
-
 
 # Thread-local span stack for parent tracking
 _span_stack = threading.local()

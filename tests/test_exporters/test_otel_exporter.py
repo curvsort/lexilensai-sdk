@@ -1,6 +1,7 @@
 """Tests for OTel exporter."""
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 from lexilensai.exporters import OTelExporter
 from lexilensai.span import Span
@@ -38,7 +39,7 @@ def mock_otel_components():
 
 def test_otel_exporter_initialization(mock_otel_components):
     """Test OTelExporter initializes correctly."""
-    exporter = OTelExporter(
+    OTelExporter(
         endpoint="http://localhost:4317",
         service_name="test_service"
     )
@@ -61,7 +62,7 @@ def test_otel_exporter_initialization(mock_otel_components):
 
 def test_otel_exporter_endpoint_parsing(mock_otel_components):
     """Test that OTelExporter correctly parses endpoint URLs."""
-    exporter = OTelExporter(
+    OTelExporter(
         endpoint="http://localhost:4317",
         service_name="test"
     )
@@ -187,7 +188,7 @@ def test_otel_exporter_multiple_spans(mock_otel_components):
 
 def test_otel_exporter_insecure_flag(mock_otel_components):
     """Test that OTelExporter uses insecure=True for local dev."""
-    exporter = OTelExporter(
+    OTelExporter(
         endpoint="http://localhost:4317",
         service_name="test"
     )

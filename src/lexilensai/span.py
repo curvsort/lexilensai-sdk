@@ -4,7 +4,7 @@ Span data structure for LexiLensAI instrumentation.
 Spans emitted by the SDK match the format expected by
 ingestion/span_normalizer.py on the platform side.
 """
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
@@ -94,8 +94,8 @@ def generate_span_id(prefix: str = "span") -> str:
     Returns:
         Unique span ID string
     """
-    import time
     import random
+    import time
     timestamp = int(time.time() * 1000000)  # microseconds
     random_part = random.randint(1000, 9999)
     return f"{prefix}_{timestamp}_{random_part}"

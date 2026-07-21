@@ -15,8 +15,8 @@ Usage:
     # Close and flush
     lexilens.close()
 """
-from .lexilens import LexiLens
 from .config import Config
+from .lexilens import LexiLens
 from .span import Span, generate_span_id
 
 __version__ = "0.1.0"
