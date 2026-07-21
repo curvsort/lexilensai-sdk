@@ -170,6 +170,9 @@ python examples/quickstart_console.py
 # Anthropic SDK demo (needs ANTHROPIC_API_KEY)
 python examples/anthropic_demo.py
 
+# MCP server instrumentation (needs ANTHROPIC_API_KEY)
+python examples/mcp_server_demo.py
+
 # Strands agent demo (needs strands-agents + API key)
 python examples/quickstart.py
 
@@ -206,9 +209,9 @@ LexiLensAI Platform (session graphs, anomaly detection, WHY reasoning)
 | Version | Status | Features |
 |---------|--------|----------|
 | v0.1.0 | ✅ Released | Strands agents, OTel/JSONL/Console exporters, session tracking |
-| v0.2.1 | ✅ Released | Anthropic SDK instrumentation, token usage report CLI, cost estimation |
-| v0.3.0 | Planned | LangChain support, platform HTTP exporter, async batching |
-| v0.4.0 | Planned | Auto-detect frameworks, MCP server instrumentation |
+| v0.2.1 | ✅ Released | Anthropic SDK instrumentation, token usage report CLI, cost estimation, platform HTTP exporter |
+| v0.2.2 | ✅ Current | MCP server instrumentation example (works via Anthropic patching — zero-config) |
+| v0.3.0 | Planned | LangChain support, async batching, streaming token capture |
 
 ## Contributing
 

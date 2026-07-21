@@ -35,7 +35,7 @@ def patch_strands(session_id: str, exporter: Any) -> None:
     try:
         from strands import Agent
     except ImportError:
-        print("Warning: strands package not found. Skipping instrumentation.")
+        # strands is optional — silently skip if not installed
         return
 
     global _original_agent_call

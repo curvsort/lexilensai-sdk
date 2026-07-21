@@ -16,7 +16,7 @@ class Config:
     tenant_id: str
     application_id: str
     collector_endpoint: str
-    exporter: Literal["otel", "jsonl", "console"]
+    exporter: Literal["otel", "jsonl", "console", "platform"]
     api_key: str | None
     harness: str
     harness_version: str
@@ -55,11 +55,11 @@ class Config:
         config.update(overrides)
 
         # Validate exporter choice
-        valid_exporters = {"otel", "jsonl", "console"}
+        valid_exporters = {"otel", "jsonl", "console", "platform"}
         if config["exporter"] not in valid_exporters:
             raise ValueError(
                 f"Invalid LEXILENS_EXPORTER: {config['exporter']}. "
-                f"Must be one of: {', '.join(valid_exporters)}"
+                f"Must be one of: {', '.join(sorted(valid_exporters))}"
             )
 
         return cls(**config)

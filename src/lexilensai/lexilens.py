@@ -8,7 +8,7 @@ import time
 from typing import Any
 
 from .config import Config
-from .exporters import ConsoleExporter, JSONLExporter, OTelExporter
+from .exporters import ConsoleExporter, JSONLExporter, OTelExporter, PlatformExporter
 from .frameworks import patch_anthropic, patch_strands, unpatch_anthropic, unpatch_strands
 from .span import Span, generate_span_id
 
@@ -44,6 +44,7 @@ class LexiLens:
         application_id: str | None = None,
         exporter: str | None = None,
         collector_endpoint: str | None = None,
+        platform_url: str | None = None,
         objective: str | None = None,
         **config_overrides
     ) -> "LexiLens":
@@ -52,7 +53,7 @@ class LexiLens:
 
         This method:
         1. Loads configuration from environment + overrides
-        2. Creates the appropriate exporter (otel, jsonl, or console)
+        2. Creates the appropriate exporter (otel, jsonl, console, or platform)
         3. Generates a unique session ID
         4. Emits a session.start span
         5. Patches the Strands framework
@@ -60,8 +61,9 @@ class LexiLens:
         Args:
             tenant_id: Tenant identifier (overrides LEXILENS_TENANT_ID)
             application_id: Application identifier (overrides LEXILENS_APPLICATION_ID)
-            exporter: Exporter type - "otel"|"jsonl"|"console" (overrides LEXILENS_EXPORTER)
+            exporter: Exporter type - "otel"|"jsonl"|"console"|"platform" (overrides LEXILENS_EXPORTER)
             collector_endpoint: OTel collector endpoint (overrides LEXILENS_COLLECTOR_ENDPOINT)
+            platform_url: LexiLensAI platform URL for "platform" exporter (default: http://localhost:8000)
             objective: Session objective/goal (optional, stored in session metadata)
             **config_overrides: Additional config overrides
 
@@ -87,6 +89,12 @@ class LexiLens:
 
         # Create exporter
         if config.exporter == "otel":
+            if OTelExporter is None:
+                raise ImportError(
+                    "OTel exporter requires opentelemetry packages. "
+                    "Install with: pip install opentelemetry-api opentelemetry-sdk "
+                    "opentelemetry-exporter-otlp-proto-grpc"
+                )
             exp = OTelExporter(
                 endpoint=config.collector_endpoint,
                 service_name=config.application_id
@@ -95,6 +103,9 @@ class LexiLens:
             exp = JSONLExporter()
         elif config.exporter == "console":
             exp = ConsoleExporter()
+        elif config.exporter == "platform":
+            url = platform_url or config_overrides.get("platform_url") or "http://localhost:8000"
+            exp = PlatformExporter(platform_url=url)
         else:
             raise ValueError(f"Unknown exporter: {config.exporter}")
 

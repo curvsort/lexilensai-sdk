@@ -1,6 +1,12 @@
 """Exporters for LexiLensAI spans."""
 from .console import ConsoleExporter
 from .jsonl import JSONLExporter
-from .otel import OTelExporter
+from .platform import PlatformExporter
 
-__all__ = ["OTelExporter", "JSONLExporter", "ConsoleExporter"]
+# OTel exporter requires opentelemetry — import lazily
+try:
+    from .otel import OTelExporter
+except ImportError:
+    OTelExporter = None  # type: ignore[assignment,misc]
+
+__all__ = ["OTelExporter", "JSONLExporter", "ConsoleExporter", "PlatformExporter"]
