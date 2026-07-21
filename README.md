@@ -2,28 +2,63 @@
 
 **See where your Claude tokens go.**
 
-The LexiLensAI SDK instruments your Anthropic API calls to emit per-call token breakdowns — input, output, cache hits/misses, thinking overhead — then generates reports showing exactly why your bill spiked.
-
-## Why
-
 You got a $50 Claude invoice and the Anthropic dashboard shows a total. You need per-call visibility: which calls missed cache, which burned tokens on thinking, which retried silently. That's what this does.
 
-## Install
+## 30-Second Quickstart
 
 ```bash
 pip install lexilensai-sdk
 ```
 
-## Quick Start — Anthropic SDK
+```python
+from lexilensai import LexiLens
+import anthropic
+
+lexilens = LexiLens.init(exporter="jsonl")  # ← 1 line added
+
+client = anthropic.Anthropic()  # or AnthropicBedrock() — same SDK, same patch
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain prompt caching"}]
+)
+
+lexilens.close()
+```
+
+```bash
+lexilens report
+```
+
+```
+═══════════════════════════════════════════════════════════
+  LexiLensAI — Token Usage Report
+═══════════════════════════════════════════════════════════
+Session: sess_1784662444 | 1 call | $0.012
+
+  #1  claude-sonnet-4  1,523 in / 847 out / 2,500 cache_create  (1200ms)
+
+Anomalies: none detected
+═══════════════════════════════════════════════════════════
+```
+
+**That's it.** One import, one init call, zero changes to your Anthropic code. Works with `Anthropic()`, `AnthropicBedrock()`, streaming, and tools.
+
+## Why
+
+- **Per-call token breakdown** — input, output, cache create/read, thinking tokens, latency
+- **Cost estimation** — see dollar amounts per call, not just monthly totals
+- **Anomaly detection** — flags cache misses after hits, 3x token spikes, thinking overhead >50%
+- **Zero config** — `pip install` and add one line. No collector, no infra, no signup
+
+## Detailed Example
 
 ```python
 from lexilensai import LexiLens
 import anthropic
 
-# One line to start capturing
 lexilens = LexiLens.init(exporter="jsonl")
 
-# Use the Anthropic SDK normally — zero code changes
 client = anthropic.Anthropic()
 response = client.messages.create(
     model="claude-sonnet-4-20250514",
@@ -31,7 +66,7 @@ response = client.messages.create(
     messages=[{"role": "user", "content": "Explain prompt caching in one paragraph"}]
 )
 
-# Make more calls...
+# Make more calls — each is tracked individually
 response2 = client.messages.create(
     model="claude-sonnet-4-20250514",
     max_tokens=1024,
@@ -41,33 +76,27 @@ response2 = client.messages.create(
 lexilens.close()
 ```
 
-Then run the report:
-
 ```bash
 lexilens report
 ```
 
-Output:
-
 ```
-======================================================================
+═══════════════════════════════════════════════════════════
   LexiLensAI — Token Usage Report
-======================================================================
+═══════════════════════════════════════════════════════════
+Session: sess_1784662444 | 2 calls | $0.025
 
-Session: sess_1784662444
-Total calls: 2
-
-Token Breakdown:
-----------------------------------------------------------------------
-  Call 1: claude-sonnet    → 1,523 in / 847 out / 2,500 cache_create (1200ms)
-  Call 2: claude-sonnet    → 1,523 in / 231 out / 2,500 cache_read (400ms) ← cache HIT
+  #1  claude-sonnet-4  1,523 in / 847 out / 2,500 cache_create  (1200ms)
+  #2  claude-sonnet-4  1,523 in / 231 out / 2,500 cache_read    (400ms) ← CACHE HIT
 
 Summary:
-  Total tokens: 3,046 input / 1,078 output
-  Cache efficiency: 50% (1/2 calls hit cache)
-  Estimated cost: $0.0254
+  Total: 3,046 input / 1,078 output
+  Cache efficiency: 50% (1/2 hit)
+  Estimated cost: $0.025
 
-======================================================================
+Anomalies:
+  (none)
+═══════════════════════════════════════════════════════════
 ```
 
 ## Features
