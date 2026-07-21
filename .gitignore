@@ -51,8 +51,13 @@ lexilens_spans.jsonl
 *.egg
 MANIFEST
 
+# Ruff cache
+.ruff_cache/
+
+# Internal build docs (not user-facing)
 GAPS_RESOLVED.md
 NEXT_STEPS.md
 VERIFICATION_REPORT.md
-
-
+BUILD_SUMMARY.md
+QUICKREF.md
+PUSH_INSTRUCTIONS.md

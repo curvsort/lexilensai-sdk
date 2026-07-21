@@ -1,255 +1,231 @@
 # LexiLensAI SDK
 
-**Session-aware instrumentation for multi-agent AI systems.**
+**See where your Claude tokens go.**
 
-The LexiLensAI SDK automatically instruments your agent framework to emit OpenTelemetry-compatible spans, enabling session-level observability, execution graph reconstruction, and anomaly detection.
+The LexiLensAI SDK instruments your Anthropic API calls to emit per-call token breakdowns — input, output, cache hits/misses, thinking overhead — then generates reports showing exactly why your bill spiked.
 
-## Features
+## Why
 
-- **Automatic instrumentation** — Monkey-patch agent frameworks with one line of code
-- **Session-aware tracking** — Groups all spans by session with parent-child relationships
-- **Multiple exporters** — Send to OTel collector (gRPC), local JSONL file, or console
-- **Zero-config defaults** — Works out of the box with sensible defaults
-- **Framework support** — Strands agents (v0.1.0), with LangChain and Anthropic SDK coming soon
+You got a $50 Claude invoice and the Anthropic dashboard shows a total. You need per-call visibility: which calls missed cache, which burned tokens on thinking, which retried silently. That's what this does.
 
-## Installation
+## Install
 
 ```bash
 pip install lexilensai-sdk
 ```
 
-## Quick Start
-
-### Basic Usage (Strands Framework)
+## Quick Start — Anthropic SDK
 
 ```python
 from lexilensai import LexiLens
-from strands import Agent
+import anthropic
 
-# Initialize instrumentation (emits session.start span)
-lexilens = LexiLens.init(
-    tenant_id="acme_corp",
-    application_id="research_assistant"
+# One line to start capturing
+lexilens = LexiLens.init(exporter="jsonl")
+
+# Use the Anthropic SDK normally — zero code changes
+client = anthropic.Anthropic()
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain prompt caching in one paragraph"}]
 )
 
-# Your agent code runs here — spans are emitted automatically
-agent = Agent(system_prompt="You are a helpful research assistant")
-result = agent("What are the latest developments in AI?")
+# Make more calls...
+response2 = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Now explain extended thinking"}]
+)
 
-# Close session (emits session.end span)
 lexilens.close()
 ```
 
-### Context Manager Pattern
+Then run the report:
 
-```python
-from lexilensai import LexiLens
-from strands import Agent
-
-with LexiLens.init(tenant_id="acme", application_id="app") as lexilens:
-    agent = Agent(system_prompt="You are a helpful assistant")
-    result = agent("Hello!")
-# Automatically closes and flushes spans
+```bash
+lexilens report
 ```
+
+Output:
+
+```
+======================================================================
+  LexiLensAI — Token Usage Report
+======================================================================
+
+Session: sess_1784662444
+Total calls: 2
+
+Token Breakdown:
+----------------------------------------------------------------------
+  Call 1: claude-sonnet    → 1,523 in / 847 out / 2,500 cache_create (1200ms)
+  Call 2: claude-sonnet    → 1,523 in / 231 out / 2,500 cache_read (400ms) ← cache HIT
+
+Summary:
+  Total tokens: 3,046 input / 1,078 output
+  Cache efficiency: 50% (1/2 calls hit cache)
+  Estimated cost: $0.0254
+
+======================================================================
+```
+
+## Features
+
+- **Anthropic SDK instrumentation** — Auto-patches `messages.create()` and `.stream()`. Captures input/output tokens, cache creation/read tokens, thinking tokens, latency, model name.
+- **Strands agent instrumentation** — Session-aware spans for multi-agent workflows.
+- **Token Usage Report CLI** — `lexilens report` shows per-call breakdown, cache efficiency, thinking overhead, cost estimates, and anomaly detection.
+- **Multiple exporters** — OTel collector (gRPC), local JSONL file, or console.
+- **Zero config** — Works out of the box. Auto-detects installed frameworks.
+
+## Token Usage Report
+
+```bash
+# Default: reads lexilens_spans.jsonl
+lexilens report
+
+# JSON output for programmatic use
+lexilens report --json
+
+# Specific file
+lexilens report -f my_spans.jsonl
+
+# Filter to one session
+lexilens report -s sess_1784662444
+
+# Also works as a module
+python -m lexilensai
+```
+
+The report detects anomalies automatically:
+
+- **Cache miss after hit** — prompt prefix changed between calls
+- **Token spike** — 3x+ average suggests retry or context expansion
+- **Thinking overhead** — extended thinking consuming >50% of output
+- **Errors** — failed calls with error messages
+
+## What Gets Instrumented
+
+### Anthropic SDK (v0.2.0+)
+
+| Metric | Source |
+|--------|--------|
+| `input_tokens` | Response usage |
+| `output_tokens` | Response usage |
+| `cache_creation_input_tokens` | Response usage |
+| `cache_read_input_tokens` | Response usage |
+| `thinking_tokens` | Counted from thinking content blocks |
+| `latency_ms` | Wall clock per call |
+| `model` | From request kwargs |
+| `is_streaming` | create vs stream |
+
+### Strands Agents (v0.1.0+)
+
+| Event | Span Name |
+|-------|-----------|
+| Session start | `session.start` |
+| Session end | `session.end` |
+| Agent call start | `agent.start` |
+| Agent call end | `agent.end` |
 
 ## Configuration
 
-Configuration via environment variables (all optional):
-
 ```bash
-# Required for production
-export LEXILENS_TENANT_ID=acme_corp
-export LEXILENS_APPLICATION_ID=research_app
-
 # Exporter (default: otel)
-export LEXILENS_EXPORTER=otel           # Options: otel, jsonl, console
+export LEXILENS_EXPORTER=jsonl    # Options: otel, jsonl, console
 
-# OTel collector endpoint (default: http://localhost:4317)
+# For OTel exporter
 export LEXILENS_COLLECTOR_ENDPOINT=http://localhost:4317
 
-# Optional
-export LEXILENS_API_KEY=your-api-key    # For platform integration (future)
-export LEXILENS_HARNESS=strands         # Framework name (default: strands)
-export LEXILENS_HARNESS_VERSION=0.5.0   # Framework version
+# Optional metadata
+export LEXILENS_TENANT_ID=acme_corp
+export LEXILENS_APPLICATION_ID=my_app
 ```
 
-### Programmatic Configuration
+Or programmatically:
 
 ```python
 lexilens = LexiLens.init(
+    exporter="jsonl",
     tenant_id="acme_corp",
-    application_id="research_app",
-    exporter="jsonl",                   # Override env var
-    objective="Research AI trends"      # Session-level metadata
+    application_id="my_app",
+    objective="Research task"
 )
 ```
 
 ## Exporters
 
-### OTel Exporter (Production)
+| Exporter | Use Case | Output |
+|----------|----------|--------|
+| `jsonl` | Development, report CLI | `lexilens_spans.jsonl` |
+| `console` | Debugging | Prints to stdout |
+| `otel` | Production | gRPC to OTel collector |
 
-Sends spans to an OpenTelemetry collector via gRPC:
+## Examples
 
-```python
-lexilens = LexiLens.init(
-    exporter="otel",
-    collector_endpoint="http://localhost:4317"
-)
+```bash
+# Test installation (no API key needed)
+python examples/quickstart_console.py
+
+# Anthropic SDK demo (needs ANTHROPIC_API_KEY)
+python examples/anthropic_demo.py
+
+# Strands agent demo (needs strands-agents + API key)
+python examples/quickstart.py
+
+# Interactive notebook
+jupyter notebook examples/production_demo.ipynb
 ```
 
-**Requirements:**
-- Running OTel collector (e.g., AWS ADOT, Jaeger, local collector)
-- Collector configured to forward to your backend
-
-### JSONL Exporter (Development)
-
-Writes spans to a local file for offline replay and testing:
-
-```python
-lexilens = LexiLens.init(exporter="jsonl")
-```
-
-Output file: `lexilens_spans.jsonl` (one JSON object per line)
-
-### Console Exporter (Debugging)
-
-Prints spans to stdout in human-readable format:
-
-```python
-lexilens = LexiLens.init(exporter="console")
-```
-
-## What Gets Instrumented?
-
-For Strands agents (v0.1.0):
-
-| Event | Span Name | When |
-|-------|-----------|------|
-| Session start | `session.start` | `LexiLens.init()` |
-| Session end | `session.end` | `lexilens.close()` |
-| Agent call start | `agent.start` | `Agent.__call__` entry |
-| Agent call end | `agent.end` | `Agent.__call__` exit |
-
-**Coming in v0.2.0:**
-- `model.call` / `model.response` spans (LLM calls)
-- `tool.{name}` spans (tool invocations)
-- LangChain/LangGraph callback handler
-- Anthropic SDK instrumentation
-
-## Span Format
-
-Spans emitted by the SDK are compatible with LexiLensAI platform's ingestion pipeline. Example span:
-
-```json
-{
-  "span_name": "agent.start",
-  "start_time": "2026-07-21T10:00:00.123456Z",
-  "attributes": {
-    "span_id": "span_1721556000123456_5432",
-    "session_id": "sess_1721556000_5432",
-    "agent_id": "research_agent",
-    "parent_span_id": "span_1721556000123455_1234"
-  }
-}
-```
-
-The platform's `span_normalizer.py` maps `span_name` patterns to 25 EventTypes (SESSION_START, AGENT_START, MODEL_CALL, TOOL_CALL, etc.).
+See [`examples/`](examples/) for full source.
 
 ## Testing
 
-The SDK includes roundtrip tests with the platform's span normalizer:
-
 ```bash
-# Install dev dependencies
 pip install -e ".[dev]"
-
-# Run tests
 pytest tests/ -v
-
-# With coverage
 pytest tests/ --cov=lexilensai --cov-report=term-missing
 ```
 
 ## Architecture
 
 ```
-Your Agent Code
+Your Code (Anthropic SDK / Strands / etc.)
       ↓
-Strands Agent (monkey-patched)
+LexiLensAI SDK (auto-patches, emits spans)
       ↓
-LexiLens SDK (span emission)
+Exporter (JSONL → report CLI, or OTel → collector)
       ↓
-Exporter (OTel / JSONL / Console)
-      ↓
-OTel Collector (optional)
-      ↓
-LexiLensAI Platform (ingestion pipeline)
-```
-
-The SDK is a **thin instrumentation layer** — it emits spans in OpenTelemetry format. All analysis (session reconstruction, anomaly detection, WHY reasoning) happens on the platform backend.
-
-## Examples
-
-See [`examples/`](examples/) directory:
-
-### Scripts
-
-- **[`quickstart_console.py`](examples/quickstart_console.py)** — Test SDK installation without any agent framework. Prints spans to console.
-- **[`quickstart.py`](examples/quickstart.py)** — Minimal Strands agent example with console exporter.
-- **[`jsonl_export.py`](examples/jsonl_export.py)** — JSONL exporter for offline span analysis.
-
-### Notebooks
-
-- **[`production_demo.ipynb`](examples/production_demo.ipynb)** — **Production example** demonstrating the published SDK instrumenting a multi-agent travel planning workflow. Shows:
-  - One-line initialization with JSONL exporter
-  - Automatic instrumentation of Strands agents (orchestrator + specialists)
-  - Session summary with delegation graph
-  - How to switch to OTel exporter for production
-
-**Quick start:**
-```bash
-# Test SDK installation (no dependencies)
-python examples/quickstart_console.py
-
-# Run with Strands agents
-pip install strands-agents
-python examples/quickstart.py
-
-# Interactive notebook demo
-pip install jupyter strands-agents boto3
-jupyter notebook examples/production_demo.ipynb
+lexilens report (local analysis)
+  — or —
+LexiLensAI Platform (session graphs, anomaly detection, WHY reasoning)
 ```
 
 ## Roadmap
 
-| Version | Features |
-|---------|----------|
-| **v0.1.0** (current) | Strands agents, OTel/JSONL/Console exporters, session tracking |
-| **v0.2.0** | LangChain support, Anthropic SDK support, platform HTTP exporter, async batching |
-| **v0.3.0** | Auto-detect frameworks, memory operations, context compaction events |
+| Version | Status | Features |
+|---------|--------|----------|
+| v0.1.0 | ✅ Released | Strands agents, OTel/JSONL/Console exporters, session tracking |
+| v0.2.1 | ✅ Released | Anthropic SDK instrumentation, token usage report CLI, cost estimation |
+| v0.3.0 | Planned | LangChain support, platform HTTP exporter, async batching |
+| v0.4.0 | Planned | Auto-detect frameworks, MCP server instrumentation |
 
 ## Contributing
 
-Contributions welcome! This SDK is open-source (Apache 2.0) to enable community-driven framework adapters.
+Contributions welcome! Apache 2.0 license.
 
 **Adding a new framework:**
 1. Create `src/lexilensai/frameworks/{framework}.py`
 2. Implement `patch_{framework}()` and `unpatch_{framework}()`
-3. Add tests in `tests/test_{framework}.py`
+3. Add tests in `tests/test_frameworks/test_{framework}.py`
 4. Update README
+
+## Links
+
+- **PyPI:** https://pypi.org/project/lexilensai-sdk/
+- **GitHub:** https://github.com/curvsort/lexilensai-sdk
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE)
-
-## Links
-
-- **GitHub:** https://github.com/curvsort/lexilensai-sdk
-- **PyPI:** https://pypi.org/project/lexilensai-sdk/
-- **Platform:** https://github.com/curvsort/lexilensai (private)
-- **Session reconstruction library:** https://github.com/curvsort/agent-session-graph
-
-## Support
-
-- Issues: https://github.com/curvsort/lexilensai-sdk/issues
-- Email: support@lexilensai.com
