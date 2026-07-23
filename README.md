@@ -8,7 +8,7 @@ You got a $50 Claude invoice and the Anthropic dashboard shows a total. You need
 
 ## See it in action
 
-![LexiLensAI detects a 3.7x token spike in 60 seconds](demo.gif)
+![LexiLensAI detects a 3.7x token spike in 60 seconds](docs/demo.gif)
 
 ## 30-Second Quickstart
 
@@ -238,6 +238,28 @@ lexilens report (local analysis)
   — or —
 LexiLensAI Platform (session graphs, anomaly detection, WHY reasoning)
 ```
+
+## Full Platform
+
+The SDK feeds into the LexiLensAI platform for session-level diagnosis — causal graphs, timeline replay, and Claude-powered root-cause analysis.
+
+| Sessions Overview | Findings (WHY Analysis) |
+|:-:|:-:|
+| ![Sessions list with cost, anomalies, and objectives](docs/platform_sessions.png) | ![Claude explains recursive loop root cause](docs/platform_findings.png) |
+
+| Execution Graph | Timeline Replay |
+|:-:|:-:|
+| ![Causal graph showing 5x self-delegation chain](docs/platform_graph.png) | ![Event timeline with scrubber and agent swimlanes](docs/platform_timeline.png) |
+
+**What the platform adds beyond the CLI:**
+
+- Reconstructs full execution sessions from OTel telemetry
+- Builds causal graphs showing delegation chains, tool calls, and model invocations
+- Detects anomalies (recursive loops, token explosions, cache misses) automatically
+- Generates natural-language root-cause explanations via Claude
+- Time-travel replay — scrub through any session event by event
+
+[Live demo](https://dxzgv8qrb9ubk.cloudfront.net) — synthetic showcase data, no login required.
 
 ## Roadmap
 
