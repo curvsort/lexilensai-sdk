@@ -6,6 +6,10 @@
 
 You got a $50 Claude invoice and the Anthropic dashboard shows a total. You need per-call visibility: which calls missed cache, which burned tokens on thinking, which retried silently. That's what this does.
 
+## See it in action
+
+![LexiLensAI detects a 3.7x token spike in 60 seconds](demo.gif)
+
 ## 30-Second Quickstart
 
 ```bash
