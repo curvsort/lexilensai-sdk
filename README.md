@@ -1,5 +1,7 @@
 # LexiLensAI SDK
 
+[![Tests](https://github.com/curvsort/lexilensai-sdk/actions/workflows/test-sdk.yml/badge.svg)](https://github.com/curvsort/lexilensai-sdk/actions/workflows/test-sdk.yml)
+
 **See where your Claude tokens go.**
 
 You got a $50 Claude invoice and the Anthropic dashboard shows a total. You need per-call visibility: which calls missed cache, which burned tokens on thinking, which retried silently. That's what this does.

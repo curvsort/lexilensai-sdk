@@ -8,7 +8,13 @@ import time
 from typing import Any
 
 from .config import Config
-from .exporters import ConsoleExporter, JSONLExporter, OTelExporter, PlatformExporter
+from .exporters import (
+    ConsoleExporter,
+    JSONLExporter,
+    KinesisExporter,
+    OTelExporter,
+    PlatformExporter,
+)
 from .frameworks import patch_anthropic, patch_strands, unpatch_anthropic, unpatch_strands
 from .span import Span, generate_span_id
 
@@ -61,7 +67,8 @@ class LexiLens:
         Args:
             tenant_id: Tenant identifier (overrides LEXILENS_TENANT_ID)
             application_id: Application identifier (overrides LEXILENS_APPLICATION_ID)
-            exporter: Exporter type - "otel"|"jsonl"|"console"|"platform" (overrides LEXILENS_EXPORTER)
+            exporter: Exporter type - "otel"|"jsonl"|"console"|"platform"|"kinesis"
+                (overrides LEXILENS_EXPORTER)
             collector_endpoint: OTel collector endpoint (overrides LEXILENS_COLLECTOR_ENDPOINT)
             platform_url: LexiLensAI platform URL for "platform" exporter (default: http://localhost:8000)
             objective: Session objective/goal (optional, stored in session metadata)
@@ -106,6 +113,15 @@ class LexiLens:
         elif config.exporter == "platform":
             url = platform_url or config_overrides.get("platform_url") or "http://localhost:8000"
             exp = PlatformExporter(platform_url=url)
+        elif config.exporter == "kinesis":
+            if KinesisExporter is None:
+                raise ImportError(
+                    "Kinesis exporter requires boto3. "
+                    "Install with: pip install lexilensai-sdk[kinesis]"
+                )
+            stream = config_overrides.get("stream_name", "lexilensai-raw-events")
+            region = config_overrides.get("region_name", "ap-south-1")
+            exp = KinesisExporter(stream_name=stream, region_name=region)
         else:
             raise ValueError(f"Unknown exporter: {config.exporter}")
 

@@ -11,9 +11,8 @@ import json
 import logging
 import threading
 import time
-from typing import Any
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
 
 from ..span import Span
 

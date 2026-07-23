@@ -140,7 +140,7 @@ def test_patch_anthropic_with_cache_tokens(mock_anthropic_module, monkeypatch):
     """Test that patch_anthropic captures cache token counts."""
     from lexilensai.frameworks.anthropic import patch_anthropic
 
-    mock_module, mock_Messages = mock_anthropic_module
+    _, mock_Messages = mock_anthropic_module
     exporter = MockExporter()
     session_id = "test_session"
 
@@ -173,7 +173,7 @@ def test_patch_anthropic_with_thinking_tokens(mock_anthropic_module):
     """Test that patch_anthropic counts thinking tokens."""
     from lexilensai.frameworks.anthropic import patch_anthropic
 
-    mock_module, mock_Messages = mock_anthropic_module
+    _, mock_Messages = mock_anthropic_module
     exporter = MockExporter()
     session_id = "test_session"
 
@@ -207,7 +207,7 @@ def test_patch_anthropic_streaming_call(mock_anthropic_module):
     """Test that patch_anthropic instruments messages.stream()."""
     from lexilensai.frameworks.anthropic import patch_anthropic
 
-    mock_module, mock_Messages = mock_anthropic_module
+    _, mock_Messages = mock_anthropic_module
     exporter = MockExporter()
     session_id = "test_session"
 
@@ -235,7 +235,7 @@ def test_patch_anthropic_error_handling(mock_anthropic_module):
     """Test that patch_anthropic handles errors gracefully."""
     from lexilensai.frameworks.anthropic import patch_anthropic
 
-    mock_module, mock_Messages = mock_anthropic_module
+    _, mock_Messages = mock_anthropic_module
     exporter = MockExporter()
     session_id = "test_session"
 
@@ -261,7 +261,7 @@ def test_patch_anthropic_unpatch(mock_anthropic_module):
     """Test that unpatch_anthropic restores original behavior."""
     from lexilensai.frameworks.anthropic import patch_anthropic, unpatch_anthropic
 
-    mock_module, mock_Messages = mock_anthropic_module
+    _, mock_Messages = mock_anthropic_module
     exporter = MockExporter()
     session_id = "test_session"
 
@@ -315,7 +315,7 @@ def test_patch_anthropic_parent_span_tracking(mock_anthropic_module):
     """Test that patch_anthropic respects parent span stack."""
     from lexilensai.frameworks.anthropic import patch_anthropic
 
-    mock_module, mock_Messages = mock_anthropic_module
+    _, mock_Messages = mock_anthropic_module
     exporter = MockExporter()
     session_id = "test_session"
 

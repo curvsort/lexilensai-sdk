@@ -35,7 +35,6 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-
 PLATFORM_URL = os.environ.get("LEXILENS_PLATFORM_URL", "http://localhost:8000")
 
 

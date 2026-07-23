@@ -9,4 +9,16 @@ try:
 except ImportError:
     OTelExporter = None  # type: ignore[assignment,misc]
 
-__all__ = ["OTelExporter", "JSONLExporter", "ConsoleExporter", "PlatformExporter"]
+# Kinesis exporter requires boto3 — import lazily
+try:
+    from .kinesis import KinesisExporter
+except ImportError:
+    KinesisExporter = None  # type: ignore[assignment,misc]
+
+__all__ = [
+    "ConsoleExporter",
+    "JSONLExporter",
+    "PlatformExporter",
+    "OTelExporter",
+    "KinesisExporter",
+]

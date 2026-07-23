@@ -13,13 +13,9 @@ Runs in CI with no API keys, no Docker, no network.
 import json
 import os
 import sys
-import tempfile
-from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock
 
 import pytest
-
 
 # ─── Mock Anthropic Fixtures ────────────────────────────────────────────────
 
@@ -106,7 +102,9 @@ def test_full_e2e_jsonl_report_workflow(work_dir, monkeypatch):
     responses = [
         make_response(1500, 300, cache_create=2000, cache_read=None),
         make_response(1500, 200, cache_create=None, cache_read=2000),
-        make_response(3000, 500, cache_create=1500, cache_read=None),  # cache miss (new create after hit)
+        make_response(  # cache miss (new create after hit)
+            3000, 500, cache_create=1500, cache_read=None
+        ),
         make_response(25000, 3000, cache_create=None, cache_read=None),  # massive spike
         Exception("RateLimitError: Too many requests"),
     ]
@@ -131,7 +129,7 @@ def test_full_e2e_jsonl_report_workflow(work_dir, monkeypatch):
 
     # Import AFTER mocking
     from lexilensai import LexiLens
-    from lexilensai.report import parse_spans, group_by_session, build_session_report
+    from lexilensai.report import build_session_report, group_by_session, parse_spans
 
     # ── Step 1: Initialize SDK with JSONL exporter ──
     lexilens = LexiLens.init(
@@ -254,7 +252,7 @@ def test_e2e_multiple_sessions_in_same_file(work_dir, monkeypatch):
     monkeypatch.setitem(sys.modules, "anthropic", mock_anthropic)
 
     from lexilensai import LexiLens
-    from lexilensai.report import parse_spans, group_by_session, build_session_report
+    from lexilensai.report import build_session_report, group_by_session, parse_spans
 
     # Session 1
     lexilens1 = LexiLens.init(exporter="jsonl", objective="Session 1")
@@ -296,7 +294,7 @@ def test_e2e_report_json_output_format(work_dir, monkeypatch):
     monkeypatch.setitem(sys.modules, "anthropic", mock_anthropic)
 
     from lexilensai import LexiLens
-    from lexilensai.report import parse_spans, group_by_session, build_session_report
+    from lexilensai.report import build_session_report, group_by_session, parse_spans
 
     # Run a session
     lexilens = LexiLens.init(exporter="jsonl", objective="JSON report test")
@@ -363,7 +361,7 @@ def test_e2e_context_manager_workflow(work_dir, monkeypatch):
 
     # Use context manager
     with LexiLens.init(exporter="jsonl", objective="Context manager test") as lexilens:
-        session_id = lexilens.session_id
+        _ = lexilens.session_id  # verify session_id is assigned
         mock_Messages.create(None, model="claude-sonnet-4-20250514")
 
     # After exiting context, JSONL should be written
@@ -411,7 +409,7 @@ def test_e2e_cache_miss_anomaly_detection(work_dir, monkeypatch):
     monkeypatch.setitem(sys.modules, "anthropic", mock_anthropic)
 
     from lexilensai import LexiLens
-    from lexilensai.report import parse_spans, group_by_session, build_session_report
+    from lexilensai.report import build_session_report, group_by_session, parse_spans
 
     lexilens = LexiLens.init(exporter="jsonl", objective="Cache anomaly test")
     session_id = lexilens.session_id
